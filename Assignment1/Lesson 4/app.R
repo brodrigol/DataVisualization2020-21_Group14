@@ -2,7 +2,7 @@ library(shiny)
 
 # Define UI ----
 ui <- fluidPage(
-  titlePanel("Lesson 3 - CensusVis"),
+  titlePanel("Lesson 4 - CensusVis"),
   
   sidebarLayout(position = "left",
                 sidebarPanel(

@@ -1,46 +1,61 @@
+# Load packages ----
 library(shiny)
+library(quantmod)
 
-# Define UI ----
+# Source helpers ----
+source("helpers.R")
+
+# User interface ----
 ui <- fluidPage(
-  titlePanel("Lesson 3 - CensusVis"),
-  
-  sidebarLayout(position = "left",
-                sidebarPanel(
-                  
-                  helpText("Create demographic maps with information from the 2010 US census"),
-                  
-                  selectInput("select1", 
-                                    h3(strong("Choose a variable to display")), 
-                                    choices = list("Percent White", 
-                                                   "Percent Latin", 
-                                                  "Percent Black"),
-                                    selected = 1),
-                    br(),
-                    sliderInput("slider1", 
-                                label = h3(strong("Range of interest")),
-                                min = 0, max = 100, value = c(0, 100))
-                ),
-                  
-                mainPanel(
-                  textOutput("selected_var"),
-                  textOutput("slider_var")
-                )
-                
-              )
+  titlePanel("Lesson 6 - stockVis"),
+
+  sidebarLayout(
+    sidebarPanel(
+      helpText("Select a stock to examine.
+
+        Information will be collected from Yahoo finance."),
+      textInput("symb", "Symbol", "SPY"),
+
+      dateRangeInput("dates",
+                     "Date range",
+                     start = "2013-01-01",
+                     end = as.character(Sys.Date())),
+
+      br(),
+      br(),
+
+      checkboxInput("log", "Plot y axis on log scale",
+                    value = FALSE),
+
+      checkboxInput("adjust",
+                    "Adjust prices for inflation", value = FALSE)
+    ),
+
+    mainPanel(plotOutput("plot"))
   )
+)
 
-
-# Define server logic ----
+# Server logic
 server <- function(input, output) {
-  
-  output$selected_var <- renderText ({
-    paste("You have selected ", input$select1)
+
+  dataInput <- reactive({
+    getSymbols(input$symb, src = "yahoo",
+               from = input$dates[1],
+               to = input$dates[2],
+               auto.assign = FALSE)
   })
-  output$slider_var <- renderText ({
-    paste("You have selected a rage that goes from ", input$slider1[1], " to ", input$slider1[2])
-  })
   
+  inflationAdjust <- reactive({
+    if (!input$adjust) return(dataInput())
+    adjust(dataInput())
+  })
+
+  output$plot <- renderPlot({
+    chartSeries(inflationAdjust(), theme = chartTheme("white"),
+                type = "line", log.scale = input$log, TA = NULL)
+  })
+
 }
 
-# Run the app ----
+# Run the app
 shinyApp(ui, server)

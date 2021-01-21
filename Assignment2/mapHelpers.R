@@ -3,33 +3,29 @@ victims_map <- function(shootings, gender, race, age) {
   
   # Filter data 
   gen <- switch(gender, 
-                   "All" = "All",
+                   "Male and Female" = "male and female",
                    "Male" = "M",
                    "Female" = "F")
   
-  if(gen == "All" & race == "All"){
+  if(gen == "male and female" & race == "All races"){
     data <-count(shootings[shootings$age >= age[1] & shootings$age <= age[2],], 'state')
   }
-  else if(gen == "All"){
+  else if(gen == "male and female"){
     data <-count(shootings[shootings$race == race & shootings$age >= age[1] & shootings$age <= age[2],], 'state')
   }
-  else if(race == "All"){
+  else if(race == "All races"){
     data <-count(shootings[shootings$gender == gen & shootings$age >= age[1] & shootings$age <= age[2],], 'state')
   }
   else {
     data <-count(shootings[shootings$gender == gen & shootings$race == race & shootings$age >= age[1] & shootings$age <= age[2],], 'state')
   }
 
-  # Plot color
-shades <- colorRampPalette(c('white', 'darkred'))(100)
-sum = data$freq
-data$percent <- cut(data$freq, 100, include.lowest = TRUE)
-fills <- shades[data$percent]
 
-map("state", fill = TRUE, col = fills, 
-    resolution = 0, lty = 0, lwd = 1, projection = "polyconic", 
-    myborder = 0, mar = c(0,0,0,0))
-map("state", col = "grey", fill = FALSE, add = TRUE,
-    lty = 1, lwd = 1, projection = "polyconic", 
-    myborder = 0, mar = c(0,0,0,0))
+choropleth_data <- data.frame(data$state, data$freq)
+colnames(choropleth_data ) <- c("region", "value")
+choropleth_data$region <- state.name[match(choropleth_data$region,state.abb)]
+choropleth_data$region <- tolower(choropleth_data$region)
+sum = sum(data$freq)
+state_choropleth(choropleth_data, num_colors = 9, title = paste0("US police shootings 2015-2020, victim's profile:\n", race, ", ", gen, ", age between ", age[1], " and ", age[2]), legend = paste0("Total shootings: ", sum))
+
 }

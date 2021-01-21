@@ -4,6 +4,8 @@ library(rstudioapi)
 library(tidyverse)
 library(lubridate)
 library(plyr)
+library(choroplethr)
+library(choroplethrMaps)
 library(quantmod)
 library(maps)
 
@@ -29,22 +31,23 @@ shootings$age <- as.integer(shootings$age)
 
 # User interface ----
 ui <- fluidPage(
-  titlePanel("MapApp"),
+  titlePanel("Vitims profile"),
   
   sidebarLayout(
     sidebarPanel(
-      helpText("Victims' demographic maps."),
+      helpText("Take an insight into the victim geographical distribution."),
+      helpText("Please, choose victims' demographics."),
       
       selectInput("gender", 
-                  label = "Choose gender to display",
-                  choices = c("All", 
+                  label = "Victim's gender",
+                  choices = c("Male and Female", 
                               "Male",
                               "Female"),
                   selected = "All"),
       
       selectInput("race", 
-                  label = "Choose race to display",
-                  choices = c("All", 
+                  label = "Victim's race",
+                  choices = c("All races", 
                               "Asian",
                               "Black",
                               "Hispanic",
@@ -54,7 +57,7 @@ ui <- fluidPage(
                   selected = "All"),
       
       sliderInput("range", 
-                  label = "Age range:",
+                  label = "Victim's age range:",
                   min = min(shootings$age), max = max(shootings$age), value = c(min(shootings$age), max(shootings$age)))
     ),
     mainPanel(plotOutput("map"))

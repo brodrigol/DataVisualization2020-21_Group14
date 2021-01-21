@@ -22,10 +22,11 @@ victims_map <- function(shootings, gender, race, age) {
 
 
 choropleth_data <- data.frame(data$state, data$freq)
-colnames(choropleth_data ) <- c("region", "value")
-choropleth_data$region <- state.name[match(choropleth_data$region,state.abb)]
-choropleth_data$region <- tolower(choropleth_data$region)
-sum = sum(data$freq)
-state_choropleth(choropleth_data, num_colors = 9, title = paste0("US police shootings 2015-2020, victim's profile:\n", race, ", ", gen, ", age between ", age[1], " and ", age[2]), legend = paste0("Total shootings: ", sum))
+colnames(data ) <- c("region", "value")
+data$region <- state.name[match(data$region,state.abb)]
+data$region <- tolower(data$region)
+data <- rbind(data, subset(data.frame(region = tolower(state.name), value = replicate(length(state.name), 0)), !(region %in% data$region)))
+sum = sum(data$value)
+state_choropleth(data, num_colors = 9, title = paste0("US police shootings 2015-2020, victim's profile:\n", race, ", ", gen, ", age between ", age[1], " and ", age[2]), legend = paste0("Total shootings: ", sum))
 
 }

@@ -3,12 +3,13 @@ library(shiny)
 library(rstudioapi)
 library(tidyverse)
 library(lubridate)
+library(maps)
 library(plyr)
 library(choroplethr)
 library(choroplethrMaps)
 library(plotly)
 library(quantmod)
-library(maps)
+
 
 source("mapHelpers.R")
 # Work dir 

@@ -1,4 +1,11 @@
-# count(shootings[shootings$gender == 'M' & shootings$race == 'White',], 'state')
+cities_map <- function(shootings, years){
+  # Prepare data
+  shootings$city_state <- paste(shootings$city, shootings$state, sep=" ")
+  data <-count(shootings[2014 + as.integer(shootings$year) >= years[1] & 2014 + as.integer(shootings$year) <= years[2],], 'city_state')
+  data <- merge(data, us.cities, by.x="city_state", by.y="name",no.dups = TRUE, suffixes = c("",""))
+  return(data)
+}
+
 victims_map <- function(shootings, gender, race, age) {
   
   # Filter data 
@@ -21,8 +28,8 @@ victims_map <- function(shootings, gender, race, age) {
   }
 
 
-choropleth_data <- data.frame(data$state, data$freq)
-colnames(data ) <- c("region", "value")
+
+colnames(data) <- c("region", "value")
 data$region <- state.name[match(data$region,state.abb)]
 data$region <- tolower(data$region)
 data <- rbind(data, subset(data.frame(region = tolower(state.name), value = replicate(length(state.name), 0)), !(region %in% data$region)))
@@ -56,7 +63,7 @@ season_map <- function(shootings, season, filt) {
   else if (season == "Month") {
     month_n <- switch(filt, 
                       "January" = "1",
-                      "Februrary" = "2",
+                      "February" = "2",
                       "March" = "3", 
                       "April" = "4",
                       "May" = "5",
@@ -93,8 +100,8 @@ season_map <- function(shootings, season, filt) {
     }
   }
   
-  choropleth_data <- data.frame(data$state, data$freq)
-  colnames(data ) <- c("region", "value")
+  
+  colnames(data) <- c("region", "value")
   data$region <- state.name[match(data$region,state.abb)]
   data$region <- tolower(data$region)
   data <- rbind(data, subset(data.frame(region = tolower(state.name), value = replicate(length(state.name), 0)), !(region %in% data$region)))

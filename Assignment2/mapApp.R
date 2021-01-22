@@ -6,6 +6,7 @@ library(lubridate)
 library(plyr)
 library(choroplethr)
 library(choroplethrMaps)
+library(plotly)
 library(quantmod)
 library(maps)
 
@@ -28,13 +29,56 @@ shootings[,c('manner_of_death','armed','gender', 'race', 'city', 'state', 'signs
 shootings$age <- as.integer(shootings$age)
 
 
+g <- list(
+  scope = 'usa',
+  projection = list(type = 'albers usa'),
+  showland = TRUE,
+  landcolor = toRGB("gray85"),
+  subunitwidth = 1,
+  countrywidth = 1,
+  subunitcolor = toRGB("white"),
+  countrycolor = toRGB("white")
+)
 
 # User interface ----
 ui <- fluidPage(
-  titlePanel("Vitims profile"),
-  
+  titlePanel("Geographical exploration"),
   sidebarLayout(
     sidebarPanel(
+      h4("US city shootings"),
+      helpText("Shooting distribution by cities"),
+      helpText("Please, choose the period of time you want to see."),
+      sliderInput("years", 
+                  label = "Year range:",
+                  min = min(2014 + as.integer(shootings$year)), 
+                  max = max(2014 + as.integer(shootings$year)), 
+                  value = c(min(2014 + as.integer(shootings$year)), max(2014 + as.integer(shootings$year))),
+                  sep = "")
+    ),
+    mainPanel(plotlyOutput("cit_map"))
+  ),
+  sidebarLayout(
+    sidebarPanel(
+      h4("Seasonality"),
+      helpText("Does shooting location have a seasonal component? We can compare the specific seasons bteween 2015 and 2020"),
+      helpText("Please, choose the period of time you want to see."),
+      
+      selectInput("seasonality", 
+                  label = "Select seasonality",
+                  choices = c("Month",
+                              "Year quarter",
+                              "Season",
+                              "Day of the week"),
+                  selected = "Month"),
+      
+      uiOutput("filter")
+      
+    ),
+    mainPanel(plotOutput("seas_map"))
+  ),
+  sidebarLayout(
+    sidebarPanel(
+      h4("Vitims profile"),
       helpText("Take an insight into the victim geographical distribution."),
       helpText("Please, choose victims' demographics."),
       
@@ -61,26 +105,6 @@ ui <- fluidPage(
                   min = min(shootings$age), max = max(shootings$age), value = c(min(shootings$age), max(shootings$age)))
     ),
     mainPanel(plotOutput("vict_map"))
-  ),
-  titlePanel(" "),
-  titlePanel("Seasonality"),
-  sidebarLayout(
-    sidebarPanel(
-      helpText("Does shooting location have a seasonal component? We can compare the specific seasons btewwen 2015 and 2020"),
-      helpText("Please, choose the period of time you want to see."),
-      
-      selectInput("seasonality", 
-                  label = "Select seasonality",
-                  choices = c("Month",
-                              "Year quarter",
-                              "Season",
-                              "Day of the week"),
-                  selected = "Month"),
-      
-      uiOutput("filter")
-      
-    ),
-    mainPanel(plotOutput("seas_map"))
   )
 )
 
@@ -126,7 +150,18 @@ server <- function(input, output, session) {
                   selected = "Week days: Mon, Tue, Wed, Thu, Fri")
     }
     
-  })  
+  }) 
+  
+  output$cit_map <- renderPlotly({
+    data <- cities_map(shootings, input$years)
+    fig <- plot_geo(data, locationmode = 'USA-states', sizes = c(1, 250))
+    fig <- fig %>% add_markers(
+      x = ~long, y = ~lat, size = ~freq, hoverinfo = "text",
+      text = ~paste(data$city_state, "<br />", data$freq, " shootings")
+    )
+    fig <- fig %>% layout(title = 'US city shootings<br>(Click legend to toggle)', geo = g)
+    
+  })
   
   output$vict_map <- renderPlot({
     victims_map(shootings, input$gender, input$race, input$range)

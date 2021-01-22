@@ -60,16 +60,80 @@ ui <- fluidPage(
                   label = "Victim's age range:",
                   min = min(shootings$age), max = max(shootings$age), value = c(min(shootings$age), max(shootings$age)))
     ),
-    mainPanel(plotOutput("map"))
+    mainPanel(plotOutput("vict_map"))
+  ),
+  titlePanel(" "),
+  titlePanel("Seasonality"),
+  sidebarLayout(
+    sidebarPanel(
+      helpText("Does shooting location have a seasonal component? We can compare the specific seasons btewwen 2015 and 2020"),
+      helpText("Please, choose the period of time you want to see."),
+      
+      selectInput("seasonality", 
+                  label = "Select seasonality",
+                  choices = c("Month",
+                              "Year quarter",
+                              "Season",
+                              "Day of the week"),
+                  selected = "Month"),
+      
+      uiOutput("filter")
+      
+    ),
+    mainPanel(plotOutput("seas_map"))
   )
 )
 
 # Server logic
-server <- function(input, output) {
- 
-  output$map <- renderPlot({
+server <- function(input, output, session) {
+  output$filter <- renderUI({
+    if(input$seasonality == "Month"){
+      selectInput("filter", 
+                  label = "Filter",
+                  choices = month.name,
+                  selected = "January")
+    }
+    else if (input$seasonality == "Year quarter"){
+      selectInput("filter", 
+                  label = "Filter",
+                  choices = c("Q1: Jan, Feb, Mar", 
+                              "Q2: Apr, May, Jun",
+                              "Q3: Jul, Aug, Sep",
+                              "Q4: Oct, Nov, Dec"),
+                  selected = "Q1: Jan, Feb, Mar")
+    }
+    else if (input$seasonality == "Season"){
+      selectInput("filter", 
+                  label = "Filter",
+                  choices = c("Spring: Mar, Apr, May", 
+                              "Summer: Jun, Jul, Aug",
+                              "Autumn: Sep, Oct, Nov",
+                              "Winter: Dec, Jan, Feb"),
+                  selected = "Spring: Mar, Apr, May ")
+    }
+    else {
+      selectInput("filter", 
+                  label = "Filter",
+                  choices = c("Week days",
+                              "Weekend",
+                              "Monday", 
+                              "Tuesday",
+                              "Wednesday",
+                              "Thursday",
+                              "Friday", 
+                              "Saturday",
+                              "Sunday"),
+                  selected = "Week days: Mon, Tue, Wed, Thu, Fri")
+    }
     
+  })  
+  
+  output$vict_map <- renderPlot({
     victims_map(shootings, input$gender, input$race, input$range)
+  })
+  
+  output$seas_map <- renderPlot({
+    season_map(shootings, input$seasonality, input$filter)
   })
   
 }

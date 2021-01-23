@@ -31,18 +31,16 @@ shootings[,c('manner_of_death','armed','gender', 'race', 'city', 'state', 'signs
 shootings$age <- as.integer(shootings$age)
 
 
-g1 <- list(
-  scope = 'usa',
-  projection = list(type = 'albers usa'),
-  showland = TRUE,
-  landcolor = toRGB("gray85"),
-  subunitwidth = 1,
-  countrywidth = 1,
-  subunitcolor = toRGB("white"),
-  countrycolor = toRGB("white")
-)
-# specify some map projection/options
-g2 <- list(scope = 'usa', projection = list(type = 'albers usa'), showlakes = TRUE, lakecolor = toRGB('white'))
+g <- list(scope = 'usa',
+          projection = list(type = 'albers usa'),
+          showland = TRUE,
+          showlakes= TRUE,
+          landcolor = toRGB("gray85"),
+          subunitwidth = 1,
+          countrywidth = 1,
+          subunitcolor = toRGB("white"),
+          countrycolor = toRGB("white"),
+          lakecolor = toRGB('white'))
 # User interface ----
 ui <- fluidPage(
   titlePanel("Geographical exploration"),
@@ -99,19 +97,19 @@ server <- function(input, output, session) {
     data <- cities_map(shootings, input$years)
     fig <- plot_geo(data, locationmode = 'USA-states', sizes = c(1, 250))
     fig <- fig %>% add_markers(
-      x = ~long, y = ~lat, size = ~freq, hoverinfo = "text",
+      x = ~long, y = ~lat, size = ~freq, hoverinfo = "text", 
       text = ~paste(data$city_state, "<br />", data$freq, " shootings")
     )
-    fig <- fig %>% layout(title = 'US city shootings', geo = g1)
+    fig <- fig %>% layout(title = 'US city shootings', geo = g)
     
   })
   
   output$vict_map <- renderPlotly({
    data <- victims_map(shootings, input$gender, input$race, input$range)
    fig <- plot_geo(data, locationmode = 'USA-states', sizes = c(1, 250))
-   fig <- fig %>% add_trace(z = ~value, text = ~hover, locations = ~region, color = ~value, colors = 'Blues')
+   fig <- fig %>% add_trace(z = ~value, text = ~hover, locations = ~region, color = ~value,  colors = 'Blues')
    fig <- fig %>% colorbar(title = "% of victims")
-   fig <- fig %>% layout(title = "% US police shootings 2015-2020 with victim's profile\n", geo = g2)
+   fig <- fig %>% layout(title = paste0("US police shootings 2015-2020, % with victim's profile:\n", input$race, ", ", input$gender, ", age between ", input$range[1], " and ", input$range[2]), geo = g)
   })
 }
 

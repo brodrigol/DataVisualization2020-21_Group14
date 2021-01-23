@@ -21,16 +21,10 @@ cat('Working directory:', getwd())
 shootings <- read_csv("data/shootings.csv")
 
 # Data wrangling
-shootings = shootings %>% 
-  mutate(date = ymd(date)) %>% 
-  mutate_at(vars(date), funs(year, month, day))
-
-shootings$week_day <- wday(shootings$date)
-
 shootings[,c('manner_of_death','armed','gender', 'race', 'city', 'state', 'signs_of_mental_illness', 'threat_level', 'flee', 'body_camera', 'arms_category', 'year', 'month', 'week_day')]  <- lapply(shootings[,c('manner_of_death','armed','gender', 'race', 'city', 'state', 'signs_of_mental_illness', 'threat_level', 'flee', 'body_camera', 'arms_category', 'year', 'month', 'week_day')], factor)
 shootings$age <- as.integer(shootings$age)
 
-
+# Map config
 g <- list(scope = 'usa',
           projection = list(type = 'albers usa'),
           showland = TRUE,

@@ -107,7 +107,7 @@ server <- function(input, output, session) {
   output$vict_map <- renderPlotly({
    data <- victims_map(shootings, input$gender, input$race, input$range)
    fig <- plot_geo(data, locationmode = 'USA-states', sizes = c(1, 250))
-   fig <- fig %>% add_trace(z = ~value, text = ~hover, locations = ~region, color = ~value,  colors = 'Blues')
+   fig <- fig %>% add_trace(z = ~value, text = ~hover, locations = ~region, color = ~value)
    fig <- fig %>% colorbar(title = "% of victims")
    fig <- fig %>% layout(title = paste0("US police shootings 2015-2020, % with victim's profile:\n", input$race, ", ", input$gender, ", age between ", input$range[1], " and ", input$range[2]), geo = g)
   })

@@ -35,3 +35,48 @@ legend("topright",
        legend = legend.text, 
        fill = shades[c(1, 25, 50, 75, 100)], 
        title = legend.title)
+
+
+
+# Nested filters for seasonality
+output$filter <- renderUI({
+    if(input$seasonality == "Month"){
+        selectInput("filter", 
+                    label = "Filter",
+                    choices = month.name,
+                    selected = "January")
+    }
+    else if (input$seasonality == "Year quarter"){
+        selectInput("filter", 
+                    label = "Filter",
+                    choices = c("Q1: Jan, Feb, Mar", 
+                                "Q2: Apr, May, Jun",
+                                "Q3: Jul, Aug, Sep",
+                                "Q4: Oct, Nov, Dec"),
+                    selected = "Q1: Jan, Feb, Mar")
+    }
+    else if (input$seasonality == "Season"){
+        selectInput("filter", 
+                    label = "Filter",
+                    choices = c("Spring: Mar, Apr, May", 
+                                "Summer: Jun, Jul, Aug",
+                                "Autumn: Sep, Oct, Nov",
+                                "Winter: Dec, Jan, Feb"),
+                    selected = "Spring: Mar, Apr, May ")
+    }
+    else {
+        selectInput("filter", 
+                    label = "Filter",
+                    choices = c("Week days",
+                                "Weekend",
+                                "Monday", 
+                                "Tuesday",
+                                "Wednesday",
+                                "Thursday",
+                                "Friday", 
+                                "Saturday",
+                                "Sunday"),
+                    selected = "Week days: Mon, Tue, Wed, Thu, Fri")
+    }
+    
+}) 

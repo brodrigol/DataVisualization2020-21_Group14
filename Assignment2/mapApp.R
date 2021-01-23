@@ -2,6 +2,7 @@
 library(shiny)
 library(rstudioapi)
 library(tidyverse)
+library(stringr) 
 library(lubridate)
 library(maps)
 library(plyr)
@@ -30,7 +31,7 @@ shootings[,c('manner_of_death','armed','gender', 'race', 'city', 'state', 'signs
 shootings$age <- as.integer(shootings$age)
 
 
-g <- list(
+g1 <- list(
   scope = 'usa',
   projection = list(type = 'albers usa'),
   showland = TRUE,
@@ -40,7 +41,8 @@ g <- list(
   subunitcolor = toRGB("white"),
   countrycolor = toRGB("white")
 )
-
+# specify some map projection/options
+g2 <- list(scope = 'usa', projection = list(type = 'albers usa'), showlakes = TRUE, lakecolor = toRGB('white'))
 # User interface ----
 ui <- fluidPage(
   titlePanel("Geographical exploration"),
@@ -60,27 +62,8 @@ ui <- fluidPage(
   ),
   sidebarLayout(
     sidebarPanel(
-      h4("Seasonality"),
-      helpText("Does shooting location have a seasonal component? We can compare the specific seasons bteween 2015 and 2020"),
-      helpText("Please, choose the period of time you want to see."),
-      
-      selectInput("seasonality", 
-                  label = "Select seasonality",
-                  choices = c("Month",
-                              "Year quarter",
-                              "Season",
-                              "Day of the week"),
-                  selected = "Month"),
-      
-      uiOutput("filter")
-      
-    ),
-    mainPanel(plotOutput("seas_map"))
-  ),
-  sidebarLayout(
-    sidebarPanel(
       h4("Vitims profile"),
-      helpText("Take an insight into the victim geographical distribution."),
+      helpText("Take an insight into the geographical distribution of victims with particular demographic features."),
       helpText("Please, choose victims' demographics."),
       
       selectInput("gender", 
@@ -105,54 +88,13 @@ ui <- fluidPage(
                   label = "Victim's age range:",
                   min = min(shootings$age), max = max(shootings$age), value = c(min(shootings$age), max(shootings$age)))
     ),
-    mainPanel(plotOutput("vict_map"))
+    mainPanel(plotlyOutput("vict_map"))
   )
 )
 
 # Server logic
 server <- function(input, output, session) {
-  output$filter <- renderUI({
-    if(input$seasonality == "Month"){
-      selectInput("filter", 
-                  label = "Filter",
-                  choices = month.name,
-                  selected = "January")
-    }
-    else if (input$seasonality == "Year quarter"){
-      selectInput("filter", 
-                  label = "Filter",
-                  choices = c("Q1: Jan, Feb, Mar", 
-                              "Q2: Apr, May, Jun",
-                              "Q3: Jul, Aug, Sep",
-                              "Q4: Oct, Nov, Dec"),
-                  selected = "Q1: Jan, Feb, Mar")
-    }
-    else if (input$seasonality == "Season"){
-      selectInput("filter", 
-                  label = "Filter",
-                  choices = c("Spring: Mar, Apr, May", 
-                              "Summer: Jun, Jul, Aug",
-                              "Autumn: Sep, Oct, Nov",
-                              "Winter: Dec, Jan, Feb"),
-                  selected = "Spring: Mar, Apr, May ")
-    }
-    else {
-      selectInput("filter", 
-                  label = "Filter",
-                  choices = c("Week days",
-                              "Weekend",
-                              "Monday", 
-                              "Tuesday",
-                              "Wednesday",
-                              "Thursday",
-                              "Friday", 
-                              "Saturday",
-                              "Sunday"),
-                  selected = "Week days: Mon, Tue, Wed, Thu, Fri")
-    }
-    
-  }) 
-  
+
   output$cit_map <- renderPlotly({
     data <- cities_map(shootings, input$years)
     fig <- plot_geo(data, locationmode = 'USA-states', sizes = c(1, 250))
@@ -160,18 +102,17 @@ server <- function(input, output, session) {
       x = ~long, y = ~lat, size = ~freq, hoverinfo = "text",
       text = ~paste(data$city_state, "<br />", data$freq, " shootings")
     )
-    fig <- fig %>% layout(title = 'US city shootings<br>(Click legend to toggle)', geo = g)
+    fig <- fig %>% layout(title = 'US city shootings', geo = g1)
     
   })
   
-  output$vict_map <- renderPlot({
-    victims_map(shootings, input$gender, input$race, input$range)
+  output$vict_map <- renderPlotly({
+   data <- victims_map(shootings, input$gender, input$race, input$range)
+   fig <- plot_geo(data, locationmode = 'USA-states', sizes = c(1, 250))
+   fig <- fig %>% add_trace(z = ~value, text = ~hover, locations = ~region, color = ~value, colors = 'Blues')
+   fig <- fig %>% colorbar(title = "% of victims")
+   fig <- fig %>% layout(title = "% US police shootings 2015-2020 with victim's profile\n", geo = g2)
   })
-  
-  output$seas_map <- renderPlot({
-    season_map(shootings, input$seasonality, input$filter)
-  })
-  
 }
 
 # Run the app

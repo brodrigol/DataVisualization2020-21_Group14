@@ -13,6 +13,7 @@ victims_map <- function(shootings, gender, race, age) {
                    "Male and Female" = "male and female",
                    "Male" = "M",
                    "Female" = "F")
+  totals <- count(shootings, 'state')
   
   if(gen == "male and female" & race == "All races"){
     data <-count(shootings[shootings$age >= age[1] & shootings$age <= age[2],], 'state')
@@ -28,14 +29,16 @@ victims_map <- function(shootings, gender, race, age) {
   }
 
 
+colnames(data) <- c("region", "n")
+data <- rbind(data, subset(data.frame(region = state.abb, n = replicate(length(state.abb), 0)), !(region %in% data$region)))
+data <- merge(data, totals, by.x="region", by.y="state",no.dups = TRUE, suffixes = c("",""))
+data$name <- state.name[match(data$region,state.abb)]
+data$value <- round((data$n / data$freq)*100, digits = 2)
+data$hover <- paste( data$name, "<br>", sep = "")
+data <- subset(data, select=c(region, name, value, hover))
 
-colnames(data) <- c("region", "value")
-data$region <- state.name[match(data$region,state.abb)]
-data$region <- tolower(data$region)
-data <- rbind(data, subset(data.frame(region = tolower(state.name), value = replicate(length(state.name), 0)), !(region %in% data$region)))
-sum = sum(data$value)
-state_choropleth(data, num_colors = 9, title = paste0("US police shootings 2015-2020, victim's profile:\n", race, ", ", gen, ", age between ", age[1], " and ", age[2]), legend = paste0("Total shootings: ", sum))
-
+return(data)
+#state_choropleth(data, num_colors = 9, title = paste0("% US police shootings 2015-2020 with victim's profile:\n", race, ", ", gen, ", age between ", age[1], " and ", age[2]), legend = "% of total state shootings")
 }
 
 season_map <- function(shootings, season, filt) {

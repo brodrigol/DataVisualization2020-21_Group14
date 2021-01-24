@@ -217,5 +217,3 @@ GenerateTimeLine <- function(data, time, var){
   
   return(ggplotly(p, tooltip="text"))
 }
-
-GenerateTimeLine(shootings, 'year', 'race')

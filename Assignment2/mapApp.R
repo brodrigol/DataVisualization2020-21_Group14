@@ -156,7 +156,31 @@ ui <- fluidPage(
 
     ),
     mainPanel(plotlyOutput("ts_plot"))
+  ),
+  titlePanel("Clustering"),
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput('slider1',"Number of clusters:", min =1, max =10, value=4),
+      selectInput('score','Select scoring method:',choices = list("BIC"="BIC","AIC"="AIC","MICL"="MICL"), selected="BIC"),
+      checkboxInput('varSel',"Automatic variable selection", value=TRUE)
+    ),
+  mainPanel(
+    tabsetPanel(
+      tabPanel("Summary",verbatimTextOutput("summary")),
+      tabPanel("Discriminative power analysis",plotOutput("discriminative")),
+      tabPanel("Distribution per class",
+               selectInput('class','Select a class:',choices = list("Day"="day","Month"="month","Year"="year",
+                                                                    "Manner of death"="manner_of_death","Armed"="armed",
+                                                                    "Age"="age","Gender"="gender","Race"="race","City"="city",
+                                                                    "State"="state","Signs of mental illness"="signs_of_mental_illness",
+                                                                    "Threat level"="threat_level","Flee"="flee",
+                                                                    "Body camera"="body_camera","Category of the arms"="arms_category"), selected="Race")
+               ,plotOutput("distribution")),
+      tabPanel("Coefficients of categorical variables",verbatimTextOutput("coeffcat")),
+      tabPanel("Coefficients of quantitative variables",verbatimTextOutput("coeffcount"))
+    )
   )
+ )
 )
 
 # Server logic
@@ -193,6 +217,24 @@ server <- function(input, output, session) {
   
   output$ts_plot <-
     renderPlotly({GenerateTimeLine(shootings, input$ts_time, input$ts_var)})
+  #Clustering
+  cluster=reactive({VarSelCluster(data, input$slider1, vbleSelec = input$varSel, nbcores = 2, initModel=40, crit.varsel = input$score)})
+  output$summary <- renderPrint({
+    print(cluster())
+  })
+  output$discriminative<-renderPlot(
+    {
+      plot(cluster())
+    })
+  output$distribution <- renderPlot({
+    plot(cluster(),y=input$class)
+  })
+  output$coeffcat <- renderPrint({
+    coef(cluster)@paramCategorical@alpha
+  })
+  output$coeffcat <- renderPrint({
+    coef(cluster)@paramInteger@lambda
+  })
 }
 
 # Run the app

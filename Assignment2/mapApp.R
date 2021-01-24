@@ -38,6 +38,7 @@ shootings = shootings %>%
 
 shootings$week_day <- wday(shootings$date)
 
+
 shootings[,c('manner_of_death','armed','gender', 'race', 'city', 'state', 'signs_of_mental_illness', 'threat_level', 'flee', 'body_camera', 'arms_category', 'year', 'month', 'week_day')]  <- lapply(shootings[,c('manner_of_death','armed','gender', 'race', 'city', 'state', 'signs_of_mental_illness', 'threat_level', 'flee', 'body_camera', 'arms_category', 'year', 'month', 'week_day')], factor)
 shootings$age <- as.integer(shootings$age)
 
@@ -59,6 +60,8 @@ corr_grid <- c(corr_option, '')
 
 time_option <- c('day', 'week_day', 'month', 'year', 'year_month')
 ts_vars <- corr_option[!(corr_option %in% time_option)]
+
+data_cluster<-shootings[,-(1:3)]
 
 # User interface ----
 ui <- fluidPage(
@@ -220,7 +223,7 @@ server <- function(input, output, session) {
     renderPlotly({GenerateTimeLine(shootings, input$ts_time, input$ts_var)})
   
   cluster=reactive({
-    VarSelCluster(data, input$slider1, vbleSelec = input$varSel, nbcores = 2, initModel=40, crit.varsel = input$score)
+    VarSelCluster(data_cluster, input$slider1, vbleSelec = input$varSel, nbcores = 2, initModel=40, crit.varsel = input$score)
   })
   output$summary <- renderPrint({
     print(cluster())

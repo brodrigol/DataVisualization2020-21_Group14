@@ -9,12 +9,22 @@ library(choroplethr)
 library(choroplethrMaps)
 library(plotly)
 library(quantmod)
+library(hrbrthemes)
+library(viridis)
+library(shinyjqui)
+library(treemap)
+library(d3treeR)
+library(rsconnect)
 
+
+rsconnect::setAccountInfo(name='upmbigdatagroup14',
+                          token='B234121BC0C86FB9E950DFAA00A10BBF',
+                          secret='W/i9wi+kRcqg2ecGOREOb9OZWctuyLv40kvFlB4D')
 
 source("mapHelpers.R")
 # Work dir 
-setwd(dirname(getActiveDocumentContext()$path ))
-cat('Working directory:', getwd())
+# setwd(dirname(getActiveDocumentContext()$path ))
+# cat('Working directory:', getwd())
 
 # Load data ----
 shootings <- read_csv("data/shootings.csv")
@@ -28,6 +38,13 @@ shootings$week_day <- wday(shootings$date)
 
 shootings[,c('manner_of_death','armed','gender', 'race', 'city', 'state', 'signs_of_mental_illness', 'threat_level', 'flee', 'body_camera', 'arms_category', 'year', 'month', 'week_day')]  <- lapply(shootings[,c('manner_of_death','armed','gender', 'race', 'city', 'state', 'signs_of_mental_illness', 'threat_level', 'flee', 'body_camera', 'arms_category', 'year', 'month', 'week_day')], factor)
 shootings$age <- as.integer(shootings$age)
+
+corr_option <- shootings %>% select(where(is.factor)) %>% names()
+corr_vars <- c(corr_option, 'age')
+corr_grid <- c(corr_option, '')
+
+time_option <- c('day', 'week_day', 'month', 'year', 'year_month')
+ts_vars <- corr_option[!(corr_option %in% time_option)]
 
 
 g <- list(
@@ -106,6 +123,58 @@ ui <- fluidPage(
                   min = min(shootings$age), max = max(shootings$age), value = c(min(shootings$age), max(shootings$age)))
     ),
     mainPanel(plotOutput("vict_map"))
+  ),
+  titlePanel("Correlation among variables"),
+  sidebarLayout(
+    sidebarPanel(
+      helpText("Please, choose the variables to analyze"),
+      selectInput("x1", 
+                  label = "X variable",
+                  choices = corr_vars,
+                  selected = 'Age'),
+      selectInput("y1", 
+                  label = "Y variable",
+                  choices = corr_vars,
+                  selected = 'gender'),
+      selectInput("g2", 
+                  label = "X grid",
+                  choices = corr_grid,
+                  selected = ""),
+      selectInput("g1", 
+                  label = "Y grid",
+                  choices = corr_grid,
+                  selected = ""),
+    ),
+    mainPanel(plotlyOutput("corr_plot"))
+  ),
+  sidebarLayout(
+    sidebarPanel(
+      helpText("Please, choose the variables for analisys"),
+      actionButton("plot_tree", "Plot treemap"),
+      br(),
+      orderInput('treeS', 'Selected', items = NULL, connect = 'treeV',placeholder = 'Drag items here...'),
+
+      orderInput('treeV', 'Variables', corr_option, connect = 'treeS')
+      
+      
+    ),
+    mainPanel(d3tree2Output("tree_plot"))
+  ),
+  titlePanel("Time series"),
+  sidebarLayout(
+    sidebarPanel(
+      helpText("Please, choose the variables for analisys"),
+      selectInput("ts_time", 
+                  label = "Time period",
+                  choices = time_option,
+                  selected = 'year'),
+      selectInput("ts_var", 
+                  label = "Group variable",
+                  choices = ts_vars,
+                  selected = 'gender'),
+
+    ),
+    mainPanel(plotlyOutput("ts_plot"))
   )
 )
 
@@ -172,6 +241,19 @@ server <- function(input, output, session) {
     season_map(shootings, input$seasonality, input$filter)
   })
   
+  output$corr_plot <-
+    renderPlotly({GenerateHeatmap(shootings, input$x1, input$y1, input$g1, input$g2)})
+  
+  observeEvent(input$plot_tree, {
+    vect <- isolate(input$treeS_order)
+    output$tree_plot <-
+      renderD3tree2({
+        GenerateTreemap(shootings,vect)
+      })
+  } , ignoreInit = TRUE)
+  
+  output$ts_plot <-
+    renderPlotly({GenerateTimeLine(shootings, input$ts_time, input$ts_var)})
 }
 
 # Run the app
